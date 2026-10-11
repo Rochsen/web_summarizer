@@ -10,7 +10,7 @@ import {
 } from "antd";
 import { ArrowRightOutlined, LinkOutlined } from "@ant-design/icons";
 import Image from "next/image";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 type SummarizeResult = {
   title: string;
@@ -62,6 +62,75 @@ export default function Home() {
     data: SummarizeResult;
     expiresAt: number;
   } | null>(null);
+  // 标记本次提交需要滚到结果区（等 DOM 渲染后再滚）
+  const shouldScrollRef = useRef(false);
+
+  /** 导航下方目标空隙（px） */
+  const RESULT_GAP = 56;
+
+  function getHeaderHeight() {
+    const header = document.querySelector(".site-header");
+    return header instanceof HTMLElement
+      ? header.getBoundingClientRect().height
+      : 72;
+  }
+
+  /** 按导航栏实际高度计算偏移，避免 sticky 顶栏盖住「总结结果」 */
+  function scrollToResult() {
+    const el = document.getElementById("result");
+    if (!el) return;
+
+    const offset = getHeaderHeight() + RESULT_GAP;
+    const top =
+      window.scrollY + el.getBoundingClientRect().top - offset;
+
+    window.scrollTo({
+      top: Math.max(0, top),
+      behavior: "smooth",
+    });
+
+    // 平滑滚动结束后再校正一次，避免动画过程中布局变化导致仍被挡住
+    window.setTimeout(() => {
+      const target = document.getElementById("result");
+      if (!target) return;
+      const desiredTop = getHeaderHeight() + RESULT_GAP;
+      const delta = target.getBoundingClientRect().top - desiredTop;
+      if (Math.abs(delta) > 4) {
+        window.scrollBy({ top: delta, behavior: "auto" });
+      }
+    }, 450);
+  }
+
+  /** 等结果标题节点挂载后再滚动（可重试几次） */
+  function scheduleScrollToResult() {
+    shouldScrollRef.current = true;
+    let tries = 0;
+    const tick = () => {
+      tries += 1;
+      // #result 仅在 loading 结束且有结果时才会挂载
+      const el = document.getElementById("result");
+      if (el && shouldScrollRef.current) {
+        shouldScrollRef.current = false;
+        scrollToResult();
+        return;
+      }
+      if (tries < 40) {
+        window.setTimeout(tick, 50);
+      }
+    };
+    window.setTimeout(tick, 80);
+  }
+
+  // 结果渲染完成后再滚动（兜底）
+  useEffect(() => {
+    if (!result || loading || !shouldScrollRef.current) return;
+    const timer = window.setTimeout(() => {
+      if (!shouldScrollRef.current) return;
+      shouldScrollRef.current = false;
+      scrollToResult();
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [result, loading]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,13 +149,8 @@ export default function Home() {
       cached.inputUrl === trimmed &&
       Date.now() < cached.expiresAt
     ) {
-      setResult(cached.data);
-      requestAnimationFrame(() => {
-        document.getElementById("result")?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      });
+      setResult({ ...cached.data });
+      scheduleScrollToResult();
       return;
     }
 
@@ -118,13 +182,7 @@ export default function Home() {
         data: nextResult,
         expiresAt: Date.now() + CLIENT_CACHE_TTL_MS,
       };
-
-      requestAnimationFrame(() => {
-        document.getElementById("result")?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      });
+      scheduleScrollToResult();
     } catch (err) {
       setError(err instanceof Error ? err.message : "总结失败，请稍后重试");
     } finally {
@@ -215,10 +273,13 @@ export default function Home() {
       </section>
 
       {(result || loading) && (
-        <section className="result-section" id="result">
+        <section className="result-section">
           {result && !loading && (
             <div className="result-panel">
-              <p className="result-label">总结结果</p>
+              {/* 锚点打在标题文字上，滚动时按导航高度留白 */}
+              <p id="result" className="result-label">
+                总结结果
+              </p>
               <h2 className="result-title">{result.title}</h2>
               <a
                 className="result-link"

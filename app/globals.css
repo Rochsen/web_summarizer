@@ -317,12 +317,12 @@ html[data-theme="dark"] .hero__veil {
 .result-section {
   max-width: 760px;
   margin: 0 auto;
-  padding: 24px 24px 72px;
+  padding: 48px 24px 72px;
   text-align: center;
 }
 
 .result-panel {
-  padding: 36px 0 8px;
+  padding: 8px 0 8px;
   animation: fade-up 0.4s ease;
 }
 
@@ -332,6 +332,8 @@ html[data-theme="dark"] .hero__veil {
   letter-spacing: 0.12em;
   color: var(--brand);
   font-weight: 500;
+  /* 作为兜底：锚点跳转时也预留导航高度 */
+  scroll-margin-top: 120px;
 }
 
 .result-title {
