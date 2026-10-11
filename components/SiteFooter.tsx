@@ -18,7 +18,7 @@ export default function SiteFooter() {
         <p className="site-footer__copy">
           输入网址，一键生成简洁中文概要
         </p>
-        <p className="site-footer__meta">© 2026 简阅</p>
+        <p className="site-footer__meta">© 2026 简阅 | Dev by <a href="https://github.com/Rochsen" target="_blank">Rochsen</a></p>
       </div>
     </footer>
   );

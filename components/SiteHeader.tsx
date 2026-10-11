@@ -1,10 +1,16 @@
 "use client";
 
-import { MenuOutlined, CloseOutlined } from "@ant-design/icons";
+import {
+  CloseOutlined,
+  MenuOutlined,
+  MoonOutlined,
+  SunOutlined,
+} from "@ant-design/icons";
 import { Layout, Menu } from "antd";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useThemeMode } from "@/components/AntdProvider";
 
 const { Header } = Layout;
 
@@ -15,12 +21,14 @@ const menuItems = [
 ];
 
 /**
- * vivo 风格顶栏：左品牌、导航绝对居中
+ * vivo 风格顶栏：左品牌、导航居中、右侧深浅色切换
  */
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { mode, toggleMode } = useThemeMode();
   const selectedKeys = useMemo(() => ["home"], []);
+  const isDark = mode === "dark";
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 900px)");
@@ -59,11 +67,11 @@ export default function SiteHeader() {
             items={menuItems}
             className="site-nav"
             disabledOverflow
+            theme={isDark ? "dark" : "light"}
           />
         )}
 
-        {/* 右侧占位，与左侧品牌宽度对称，保证导航视觉居中 */}
-        <div className="site-header__spacer" aria-hidden="true">
+        <div className="site-header__actions">
           {isMobile && (
             <button
               type="button"
@@ -74,6 +82,15 @@ export default function SiteHeader() {
               {open ? <CloseOutlined /> : <MenuOutlined />}
             </button>
           )}
+          <button
+            type="button"
+            className="theme-toggle"
+            title={isDark ? "切换为浅色模式" : "切换为深色模式"}
+            aria-label={isDark ? "切换为浅色模式" : "切换为深色模式"}
+            onClick={toggleMode}
+          >
+            {isDark ? <SunOutlined /> : <MoonOutlined />}
+          </button>
         </div>
       </div>
 
@@ -83,6 +100,7 @@ export default function SiteHeader() {
             mode="vertical"
             selectedKeys={selectedKeys}
             items={menuItems}
+            theme={isDark ? "dark" : "light"}
             onClick={() => setOpen(false)}
           />
         </div>
