@@ -1,0 +1,6 @@
+---
+description: 项目rules
+---
+
+1. cursor生成git commit信息必须使用中文，且不允许超出50个字
+2. git commit信息的格式是 feat: 功能描述 或其他类型: 描述

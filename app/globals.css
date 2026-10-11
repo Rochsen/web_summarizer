@@ -1,26 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3f6f4;
+  --foreground: #1a2421;
+  --accent: #0f766e;
+  --accent-soft: #ccfbf1;
+  --muted: #5c6b66;
+  --surface: rgba(255, 255, 255, 0.72);
+  --border: rgba(15, 118, 110, 0.18);
+  --danger: #b42318;
+  --danger-bg: #fef3f2;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-display);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-display), "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* 轻量氛围背景：柔和渐变 + 点状纹理 */
+.app-shell {
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(45, 212, 191, 0.22), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 90% 10%, rgba(14, 116, 144, 0.14), transparent 50%),
+    linear-gradient(180deg, #eef7f4 0%, #f3f6f4 40%, #e8f0ec 100%);
+}
+
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: radial-gradient(rgba(15, 118, 110, 0.12) 0.8px, transparent 0.8px);
+  background-size: 18px 18px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 9999px;
+  animation: spin 0.7s linear infinite;
+}
+
+.loading-hint {
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+
+.result-panel {
+  animation: fade-up 0.35s ease-out;
 }

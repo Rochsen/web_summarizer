@@ -1,68 +1,137 @@
-import Image from "next/image";
+"use client";
+
+import { FormEvent, useState } from "react";
+
+type SummarizeResult = {
+  title: string;
+  summary: string;
+  url: string;
+};
 
 export default function Home() {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<SummarizeResult | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setResult(null);
+
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setError("请输入网址");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: trimmed }),
+      });
+
+      const data = (await response.json()) as SummarizeResult & {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error || "总结失败，请稍后重试");
+      }
+
+      setResult({
+        title: data.title,
+        summary: data.summary,
+        url: data.url,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "总结失败，请稍后重试");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="app-shell relative flex flex-1 flex-col">
+      <main className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-5 py-16 sm:px-8">
+        <header className="mb-10 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-[var(--foreground)] sm:text-5xl">
+            网页总结
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-3 text-base text-[var(--muted)] sm:text-lg">
+            粘贴网址，一键生成简洁中文概要
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <label htmlFor="url" className="sr-only">
+            网页地址
+          </label>
+          <input
+            id="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
+            placeholder="https://example.com/article"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            disabled={loading}
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 text-base text-[var(--foreground)] outline-none backdrop-blur-sm transition placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] disabled:opacity-60"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-3.5 text-base font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {loading ? (
+              <>
+                <span className="spinner" aria-hidden="true" />
+                <span>正在总结…</span>
+              </>
+            ) : (
+              "开始总结"
+            )}
+          </button>
+        </form>
+
+        {loading && (
+          <p className="loading-hint mt-6 text-center text-sm text-[var(--muted)]">
+            正在提取网页内容并用 AI 生成概要，请稍候…
+          </p>
+        )}
+
+        {error && (
+          <div
+            role="alert"
+            className="result-panel mt-8 rounded-xl border border-red-200 bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger)]"
           >
-            Documentation
-          </a>
-        </div>
+            {error}
+          </div>
+        )}
+
+        {result && !loading && (
+          <section className="result-panel mt-10">
+            <p className="text-xs font-medium uppercase tracking-wider text-[var(--accent)]">
+              总结结果
+            </p>
+            <h2 className="mt-2 text-xl font-semibold leading-snug text-[var(--foreground)]">
+              {result.title}
+            </h2>
+            <a
+              href={result.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 block truncate text-sm text-[var(--muted)] underline-offset-2 hover:text-[var(--accent)] hover:underline"
+            >
+              {result.url}
+            </a>
+            <p className="mt-5 whitespace-pre-wrap text-base leading-8 text-[var(--foreground)]">
+              {result.summary}
+            </p>
+          </section>
+        )}
       </main>
     </div>
   );
